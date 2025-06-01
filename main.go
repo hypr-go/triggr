@@ -2,59 +2,37 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
-	"path/filepath"
-	"strconv"
+	"os"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/godbus/dbus/v5"
 )
 
-func getCurrentBrightness(path string) int {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Printf("Error reading brightness: %v", err)
-		return -1
-	}
-	value, err := strconv.Atoi(string(data[:len(data)-1]))
-	if err != nil {
-		log.Printf("Error parsing brightness: %v", err)
-		return -1
-	}
-	return value
-}
-
 func main() {
-	backlightPathGlob := "/sys/class/backlight/*/brightness"
-	paths, err := filepath.Glob(backlightPathGlob)
-	if err != nil || len(paths) == 0 {
-		log.Fatalf("No brightness files found in %s", backlightPathGlob)
-	}
-	brightnessFile := paths[0]
-
-	watcher, err := fsnotify.NewWatcher()
+	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, "Failed to connect to session bus:", err)
+		os.Exit(1)
 	}
-	defer watcher.Close()
+	defer conn.Close()
 
-	err = watcher.Add(brightnessFile)
-	if err != nil {
-		log.Fatal(err)
+	rules := []string{
+		"type='signal',member='Notify',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications'",
+		"type='method_call',member='Notify',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications'",
+		"type='method_return',member='Notify',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications'",
+		"type='error',member='Notify',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications'",
+	}
+	var flag uint = 0
+
+	call := conn.BusObject().Call("org.freedesktop.DBus.Monitoring.BecomeMonitor", 0, rules, flag)
+	if call.Err != nil {
+		fmt.Fprintln(os.Stderr, "Failed to become monitor:", call.Err)
+		os.Exit(1)
 	}
 
-	fmt.Println("Watching brightness changes...")
-
-	for {
-		select {
-		case event := <-watcher.Events:
-			if event.Op&fsnotify.Write == fsnotify.Write {
-				current := getCurrentBrightness(brightnessFile)
-				fmt.Printf("Brightness changed: %d\n", current)
-				// You can also send this to a socket, update a panel, or call notify-send
-			}
-		case err := <-watcher.Errors:
-			log.Println("Watcher error:", err)
-		}
+	c := make(chan *dbus.Message, 10)
+	conn.Eavesdrop(c)
+	fmt.Println("Monitoring notifications")
+	for v := range c {
+		fmt.Println(v.String())
 	}
 }
