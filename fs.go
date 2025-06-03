@@ -24,7 +24,7 @@ func getCurrentBrightness(path string) int {
 	return value
 }
 
-func old_main() {
+func Fs() {
 	backlightPathGlob := "/sys/class/backlight/*/brightness"
 	paths, err := filepath.Glob(backlightPathGlob)
 	if err != nil || len(paths) == 0 {
@@ -51,6 +51,7 @@ func old_main() {
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				current := getCurrentBrightness(brightnessFile)
 				fmt.Printf("Brightness changed: %d\n", current)
+
 				// You can also send this to a socket, update a panel, or call notify-send
 			}
 		case err := <-watcher.Errors:
