@@ -1,4 +1,4 @@
-package main
+package test
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ func getCurrentBrightness(path string) int {
 	return value
 }
 
-func Fs() {
+func Fswatch() {
 	backlightPathGlob := "/sys/class/backlight/*/brightness"
 	paths, err := filepath.Glob(backlightPathGlob)
 	if err != nil || len(paths) == 0 {

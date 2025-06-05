@@ -1,10 +1,12 @@
 package main
 
-import "github.com/hypr-go/triggr/cmd"
+import (
+	"github.com/hypr-go/triggr/test"
+)
 
 func main() {
 
-	// Fs()
+	test.Fswatch()
 
-	cmd.Execute()
+	// cmd.Execute()
 }
