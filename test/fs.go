@@ -43,14 +43,14 @@ func Fswatch() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Watching brightness changes...")
+	// fmt.Println("Watching brightness changes...")
 
 	for {
 		select {
 		case event := <-watcher.Events:
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				current := getCurrentBrightness(brightnessFile)
-				fmt.Printf("Brightness changed: %d\n", current)
+				fmt.Printf("%d\n", current/960)
 
 				// You can also send this to a socket, update a panel, or call notify-send
 			}
